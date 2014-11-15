@@ -1,6 +1,6 @@
 # lita-irkit
 
-TODO: Add a description of the plugin.
+Use IRKit on Lita
 
 ## Installation
 
@@ -13,11 +13,21 @@ gem "lita-irkit"
 
 ## Configuration
 
-TODO: Describe any configuration attributes the plugin exposes.
+```
+def self.default_config(handler_config)
+  handler_config.deviceid  = ENV['IRKIT_DEVICEID']
+  handler_config.clientkey = ENV['IRKIT_CLIENTKEY']
+end
+```
 
 ## Usage
 
-TODO: Describe the plugin's features and how to use them.
+```
+route /^ir list/,        :ir_list,   command: true, help: { "ir list"                  => "list irkit command names" }
+route /^ir save (.+)/,   :ir_save,   command: true, help: { "ir save [command_name]"   => "save irkit command as name" }
+route /^ir send (.+)/,   :ir_send,   command: true, help: { "ir send [command_name]"   => "send irkit command" }
+route /^ir remove (.+)/, :ir_remove, command: true, help: { "ir remove [command_name]" => "remove irkit command" }
+```
 
 ## License
 
