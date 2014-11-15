@@ -9,16 +9,16 @@ module Lita
         handler_config.clientkey = ENV['IRKIT_CLIENTKEY']
       end
 
-      route /^ir list/,        :ir_list,   command: true, help: { "ir list"                  => "list irkit command names" }
-      route /^ir save (.+)/,   :ir_save,   command: true, help: { "ir save [command_name]"   => "save irkit command as name" }
-      route /^ir send (.+)/,   :ir_send,   command: true, help: { "ir send [command_name]"   => "send irkit command" }
-      route /^ir remove (.+)/, :ir_remove, command: true, help: { "ir remove [command_name]" => "remove irkit command" }
+      route /^ir list/,            :ir_list,       command: false, help: { "ir list"                      => "list irkit command names" }
+      route /^ir send (.+)/,       :ir_send,       command: false, help: { "ir send [command_name]"       => "send irkit command" }
+      route /^ir register (.+)/,   :ir_register,   command: true,  help: { "ir register [command_name]"   => "register irkit command" }
+      route /^ir unregister (.+)/, :ir_unregister, command: true,  help: { "ir unregister [command_name]" => "unregister irkit command" }
 
       def ir_list(response)
         response.reply Lita.redis.keys('irkit:messages:*').map{|key| key.gsub(/^irkit:messages:/, '')}.join(', ')
       end
 
-      def ir_save(response)
+      def ir_register(response)
         cmd     = response.matches[0][0]
         ir_data = irkit_api.get('/1/messages', clientkey: config.clientkey).body
         return response.reply "ir data not found" if ir_data.length == 0
@@ -36,7 +36,7 @@ module Lita
         response.reply "ir data send: #{cmd}"
       end
 
-      def ir_remove(response)
+      def ir_unregister(response)
         cmd = response.matches[0][0]
         Lita.redis.del "irkit:messages:#{cmd}"
         response.reply "ir data deleted: #{cmd}"
