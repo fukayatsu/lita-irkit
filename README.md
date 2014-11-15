@@ -14,10 +14,8 @@ gem "lita-irkit"
 ## Configuration
 
 ```
-def self.default_config(handler_config)
-  config.handlers.irkit.deviceid  = ENV["IRKIT_DEVICEID"]
-  config.handlers.irkit.clientkey = ENV["IRKIT_CLIENTKEY"]
-end
+config.handlers.irkit.deviceid  = ENV["IRKIT_DEVICEID"]
+config.handlers.irkit.clientkey = ENV["IRKIT_CLIENTKEY"]
 ```
 
 ## Usage
