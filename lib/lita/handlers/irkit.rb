@@ -1,4 +1,4 @@
-require 'irkit'
+require 'faraday'
 require 'json'
 
 module Lita
@@ -20,10 +20,10 @@ module Lita
 
       def ir_save(response)
         cmd     = response.matches[0][0]
-        ir_data = irkit.get_messages
-        return response.reply "ir data not found" unless ir_data
+        ir_data = irkit_api.get('/1/messages', clientkey: config.clientkey).body
+        return response.reply "ir data not found" if ir_data.length == 0
 
-        Lita.redis["irkit:messages:#{cmd}"] = ir_data.message.to_json
+        Lita.redis["irkit:messages:#{cmd}"] = JSON.parse(ir_data)['message'].to_json
         response.reply "ir data saved: #{cmd}"
       end
 
@@ -32,7 +32,7 @@ module Lita
         message = Lita.redis["irkit:messages:#{cmd}"]
         return response.reply 'ir data not found' unless message
 
-        irkit.post_messages JSON.parse(message)
+        irkit_api.post('/1/messages', clientkey: config.clientkey, deviceid: config.deviceid, message: message)
         response.reply "ir data send: #{cmd}"
       end
 
@@ -46,8 +46,12 @@ module Lita
         Lita.config.handlers.irkit
       end
 
-      def irkit
-        @irkit ||= ::IRKit::InternetAPI.new(clientkey: config.clientkey, deviceid: config.deviceid)
+      def irkit_api
+        @conn ||= Faraday.new(url: 'https://api.getirkit.com') do |faraday|
+          faraday.request  :url_encoded             # form-encode POST params
+          faraday.response :logger                  # log requests to STDOUT
+          faraday.adapter  Faraday.default_adapter  # make requests with Net::HTTP
+        end
       end
     end
 
