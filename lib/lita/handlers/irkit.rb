@@ -24,7 +24,7 @@ module Lita
         return response.reply "ir data not found" if ir_data.length == 0
 
         Lita.redis["irkit:messages:#{cmd}"] = JSON.parse(ir_data)['message'].to_json
-        response.reply "ir data saved: #{cmd}"
+        response.reply ":ok_woman:"
       end
 
       def ir_send(response)
@@ -33,13 +33,13 @@ module Lita
         return response.reply 'ir data not found' unless message
 
         irkit_api.post('/1/messages', clientkey: config.clientkey, deviceid: config.deviceid, message: message)
-        response.reply "ir data send: #{cmd}"
+        response.reply ":ok_woman:"
       end
 
       def ir_unregister(response)
         cmd = response.matches[0][0]
         Lita.redis.del "irkit:messages:#{cmd}"
-        response.reply "ir data deleted: #{cmd}"
+        response.reply ":ok_woman:"
       end
 
       def config
