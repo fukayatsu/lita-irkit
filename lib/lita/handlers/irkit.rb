@@ -43,6 +43,7 @@ module Lita
           message = Lita.redis[key]
           send_message(message)
         end
+        response.reply ":ok_woman:"
       end
 
       def ir_unregister(response)
