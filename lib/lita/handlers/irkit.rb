@@ -4,33 +4,32 @@ require 'json'
 module Lita
   module Handlers
     class Irkit < Handler
-      def self.default_config(handler_config)
-        handler_config.deviceid  = ENV['IRKIT_DEVICEID']
-        handler_config.clientkey = ENV['IRKIT_CLIENTKEY']
-      end
+      config :deviceid,  required: true, default: ENV['IRKIT_DEVICEID']
+      config :clientkey, required: true, default: ENV['IRKIT_CLIENTKEY']
 
       route /^ir list/,            :ir_list,         command: false, help: { "ir list"                      => "list irkit command names" }
       route /^ir send (.+)/,       :ir_send,         command: false, help: { "ir send [command_name]"       => "send irkit command" }
       route /^ir all off/,         :ir_send_all_off, command: false, help: { "ir all off"                   => "send irkit commands which end with 'off'" }
       route /^ir register (.+)/,   :ir_register,     command: true,  help: { "ir register [command_name]"   => "register irkit command" }
       route /^ir unregister (.+)/, :ir_unregister,   command: true,  help: { "ir unregister [command_name]" => "unregister irkit command" }
+      route /^ir migrate/,         :ir_migrate,      command: true
 
       def ir_list(response)
-        response.reply Lita.redis.keys('irkit:messages:*').map{|key| key.gsub(/^irkit:messages:/, '')}.join(', ')
+        response.reply redis.keys.join(', ')
       end
 
       def ir_register(response)
         cmd     = response.matches[0][0]
-        ir_data = irkit_api.get('/1/messages', clientkey: config.clientkey).body
+        ir_data = irkit_api.get('messages', clientkey: config.clientkey).body
         return response.reply "ir data not found" if ir_data.length == 0
 
-        Lita.redis[key_for_cmd(cmd)] = JSON.parse(ir_data)['message'].to_json
+        redis[cmd] = JSON.parse(ir_data)['message'].to_json
         response.reply ":ok_woman:"
       end
 
       def ir_send(response)
         cmd = response.matches[0][0]
-        message = Lita.redis[key_for_cmd(cmd)]
+        message = redis[cmd]
         return response.reply 'ir data not found' unless message
 
         send_message(message)
@@ -38,9 +37,9 @@ module Lita
       end
 
       def ir_send_all_off(response)
-        keys = Lita.redis.keys(key_for_all_off_cmd)
+        keys = redis.keys('*off')
         keys.each do |key|
-          message = Lita.redis[key]
+          message = redis[key]
           send_message(message)
         end
         response.reply ":ok_woman:"
@@ -48,30 +47,30 @@ module Lita
 
       def ir_unregister(response)
         cmd = response.matches[0][0]
-        Lita.redis.del key_for_cmd(cmd)
+        redis.del cmd
+        response.reply ":ok_woman:"
+      end
+
+      def ir_migrate(response)
+        keys = Lita.redis.keys('irkit:messages:*')
+
+        Lita.redis.pipelined do
+          keys.each do |key|
+            Lita.redis.rename key, key.sub(/^irkit:messages:/, 'handlers:irkit:')
+          end
+        end
+
         response.reply ":ok_woman:"
       end
 
     private
 
-      def key_for_cmd(cmd)
-        "irkit:messages:#{cmd}"
-      end
-
-      def key_for_all_off_cmd
-        "irkit:messages:*off"
-      end
-
       def send_message(message)
-        irkit_api.post('/1/messages', clientkey: config.clientkey, deviceid: config.deviceid, message: message)
-      end
-
-      def config
-        Lita.config.handlers.irkit
+        irkit_api.post('messages', clientkey: config.clientkey, deviceid: config.deviceid, message: message)
       end
 
       def irkit_api
-        @conn ||= Faraday.new(url: 'https://api.getirkit.com') do |faraday|
+        @conn ||= Faraday.new(url: 'https://api.getirkit.com/1') do |faraday|
           faraday.request  :url_encoded             # form-encode POST params
           faraday.response :logger                  # log requests to STDOUT
           faraday.adapter  Faraday.default_adapter  # make requests with Net::HTTP
