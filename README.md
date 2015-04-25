@@ -21,11 +21,12 @@ config.handlers.irkit.clientkey = ENV["IRKIT_CLIENTKEY"]
 ## Usage
 
 ```
-route /^ir list/,        :ir_list,    command: true, help: { "ir list"                  => "list irkit command names" }
-route /^ir save (.+)/,   :ir_save,    command: true, help: { "ir save [command_name]"   => "save irkit command as name" }
-route /^ir send (.+)/,   :ir_send,    command: true, help: { "ir send [command_name]"   => "send irkit command" }
-route /^ir remove (.+)/, :ir_remove,  command: true, help: { "ir remove [command_name]" => "remove irkit command" }
-route /^ir migrate/,     :ir_migrate, command: true
+route /^ir list/,            :ir_list,         command: false, help: { "ir list"                      => "list irkit command names" }
+route /^ir send (.+)/,       :ir_send,         command: false, help: { "ir send [command_name]"       => "send irkit command" }
+route /^ir all off/,         :ir_send_all_off, command: false, help: { "ir all off"                   => "send irkit commands which end with 'off'" }
+route /^ir register (.+)/,   :ir_register,     command: true,  help: { "ir register [command_name]"   => "register irkit command" }
+route /^ir unregister (.+)/, :ir_unregister,   command: true,  help: { "ir unregister [command_name]" => "unregister irkit command" }
+route /^ir migrate/,         :ir_migrate,      command: true
 ```
 
 ## Migration from 0.0.x to 0.1.0
