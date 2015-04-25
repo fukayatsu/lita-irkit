@@ -2,6 +2,8 @@
 
 Use IRKit on Lita
 
+[![Build Status](https://travis-ci.org/fukayatsu/lita-irkit.svg?branch=master)](https://travis-ci.org/fukayatsu/lita-irkit)
+
 ## Installation
 
 Add lita-irkit to your Lita instance's Gemfile:
