@@ -15,7 +15,7 @@ module Lita
       route /^ir migrate/,         :ir_migrate,      command: true
 
       def ir_list(response)
-        response.reply redis.keys.map{ |key| key.sub(/^messages:/, '') }.join(', ')
+        response.reply messages_redis.keys.join(', ')
       end
 
       def ir_register(response)
@@ -23,7 +23,7 @@ module Lita
         ir_data = irkit_api.get('messages', clientkey: config.clientkey).body
         return response.reply "ir data not found" if ir_data.length == 0
 
-        redis["messages:#{cmd}"] = JSON.parse(ir_data)['message'].to_json
+        messages_redis[cmd] = JSON.parse(ir_data)['message'].to_json
         response.reply ":ok_woman:"
       end
 
@@ -38,7 +38,7 @@ module Lita
       end
 
       def ir_send_all_off(response)
-        cmds = redis.keys('messages:*off').map{ |key| key.sub(/^messages:/, '') }
+        cmds = messages_redis.keys('*off')
         cmds.each do |cmd|
           send_command(cmd)
         end
@@ -47,7 +47,7 @@ module Lita
 
       def ir_unregister(response)
         cmd = response.matches[0][0]
-        redis.del "messages:#{cmd}"
+        messages_redis.del cmd
         response.reply ":ok_woman:"
       end
 
@@ -64,12 +64,16 @@ module Lita
       end
 
       def send_command(command)
-        return false unless message = redis["messages:#{command}"]
+        return false unless message = messages_redis[command]
 
         irkit_api.post('messages', clientkey: config.clientkey, deviceid: config.deviceid, message: message)
       end
 
     private
+
+      def messages_redis
+        @messages_redis ||= ::Redis::Namespace.new(:messages, redis: redis)
+      end
 
       def irkit_api
         @conn ||= Faraday.new(url: 'https://api.getirkit.com/1') do |faraday|
