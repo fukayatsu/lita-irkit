@@ -15,7 +15,7 @@ module Lita
       route /^ir migrate/,         :ir_migrate,      command: true
 
       def ir_list(response)
-        response.reply redis.keys.join(', ')
+        response.reply redis.keys.map{ |key| key.sub(/^messages:/, '') }.join(', ')
       end
 
       def ir_register(response)
@@ -23,13 +23,13 @@ module Lita
         ir_data = irkit_api.get('messages', clientkey: config.clientkey).body
         return response.reply "ir data not found" if ir_data.length == 0
 
-        redis[cmd] = JSON.parse(ir_data)['message'].to_json
+        redis["messages:#{cmd}"] = JSON.parse(ir_data)['message'].to_json
         response.reply ":ok_woman:"
       end
 
       def ir_send(response)
         cmd = response.matches[0][0]
-        message = redis[cmd]
+        message = redis["messages:#{cmd}"]
         return response.reply 'ir data not found' unless message
 
         send_message(message)
@@ -37,7 +37,7 @@ module Lita
       end
 
       def ir_send_all_off(response)
-        keys = redis.keys('*off')
+        keys = redis.keys('messages:*off')
         keys.each do |key|
           message = redis[key]
           send_message(message)
@@ -47,7 +47,7 @@ module Lita
 
       def ir_unregister(response)
         cmd = response.matches[0][0]
-        redis.del cmd
+        redis.del "messages:#{cmd}"
         response.reply ":ok_woman:"
       end
 
@@ -56,11 +56,11 @@ module Lita
 
         Lita.redis.pipelined do
           keys.each do |key|
-            Lita.redis.rename key, key.sub(/^irkit:messages:/, 'handlers:irkit:')
+            Lita.redis.rename key, key.sub(/^irkit:messages:/, 'handlers:irkit:messages:')
           end
         end
 
-        response.reply ":ok_woman:"
+        response.reply ":ok_woman: #{keys.size} keys are migrated."
       end
 
     private
