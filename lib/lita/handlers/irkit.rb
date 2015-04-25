@@ -38,9 +38,9 @@ module Lita
       end
 
       def ir_send_all_off(response)
-        keys = redis.keys('messages:*off')
-        keys.each do |key|
-          send_command(key)
+        cmds = redis.keys('messages:*off').map{ |key| key.sub(/^messages:/, '') }
+        cmds.each do |cmd|
+          send_command(cmd)
         end
         response.reply ":ok_woman:"
       end
