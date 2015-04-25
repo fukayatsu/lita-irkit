@@ -15,7 +15,7 @@ module Lita
       route /^ir migrate/,         :ir_migrate,      command: true
 
       def ir_list(response)
-        response.reply messages_redis.keys.join(', ')
+        response.reply messages_redis.keys.sort.join(', ')
       end
 
       def ir_register(response)
@@ -33,7 +33,7 @@ module Lita
         if send_command(cmd)
           response.reply ":ok_woman:"
         else
-          response.reply 'ir data not found' unless message
+          response.reply 'ir data not found'
         end
       end
 
