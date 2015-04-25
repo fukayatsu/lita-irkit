@@ -29,18 +29,18 @@ module Lita
 
       def ir_send(response)
         cmd = response.matches[0][0]
-        message = redis["messages:#{cmd}"]
-        return response.reply 'ir data not found' unless message
 
-        send_message(message)
-        response.reply ":ok_woman:"
+        if send_command(cmd)
+          response.reply ":ok_woman:"
+        else
+          response.reply 'ir data not found' unless message
+        end
       end
 
       def ir_send_all_off(response)
         keys = redis.keys('messages:*off')
         keys.each do |key|
-          message = redis[key]
-          send_message(message)
+          send_command(key)
         end
         response.reply ":ok_woman:"
       end
@@ -63,11 +63,13 @@ module Lita
         response.reply ":ok_woman: #{keys.size} keys are migrated."
       end
 
-    private
+      def send_command(command)
+        return false unless message = redis["messages:#{command}"]
 
-      def send_message(message)
         irkit_api.post('messages', clientkey: config.clientkey, deviceid: config.deviceid, message: message)
       end
+
+    private
 
       def irkit_api
         @conn ||= Faraday.new(url: 'https://api.getirkit.com/1') do |faraday|
