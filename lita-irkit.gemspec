@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = "lita-irkit"
-  spec.version       = "0.0.5"
+  spec.version       = "0.1.0"
   spec.authors       = ["fukayatsu"]
   spec.email         = ["fukayatsu@gmail.com"]
   spec.description   = %q{Use IRKit on Lita}
