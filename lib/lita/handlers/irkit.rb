@@ -20,6 +20,7 @@ module Lita
 
       def ir_register(response)
         cmd     = response.matches[0][0]
+        response.reply "waiting for ir data..."
         ir_data = irkit_api.get('messages', clientkey: config.clientkey, clear: 1).body
         return response.reply "ir data not found" if ir_data.length == 0
 
